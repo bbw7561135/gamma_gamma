@@ -39,7 +39,7 @@ double sigmaGG(struct PHOTON photon1, struct PHOTON photon2) {
   double beta = sqrt(1.0 - 1.0 / s);
   double fs = (1.0 - pow(beta, 2)) * (-2.0 * beta * (2.0 - pow(beta, 2)) + (3.0 - pow(beta, 4)) * log((1.0 + beta) / (1.0 - beta)));
 
-  return 0.0001 * fs;
+  return 0.001 * fs;
 }
 
 void inject_photons(int number, double dx, double L, std::vector<struct PHOTON> *photons) {
@@ -97,77 +97,46 @@ void move_photons(double cdt, double dx, double L, std::vector<struct PHOTON> *p
   }
 }
 
-void interact_photons(double cdt, double dx, double L, std::vector<struct PHOTON> *photons, std::vector<std::vector <int> > *grid) {
+void interact_photons(double cdt, double dx, double L, std::vector<std::pair<int, int> > *CELLS, std::vector<struct PHOTON> *photons, std::vector<std::vector <int> > *grid) {
   int N_CELLS = (int)(L / dx);
-  for (int cellPh = 0; cellPh < (*photons).size(); cellPh ++) { // choosing one of the photons
-    if ((*photons)[cellPh].counted) continue;
+  for (int phI = 0; phI < (*photons).size(); ) {
+    int cell_x = floor(((*photons)[phI].r.x + L / 2.0) / dx);
+    int cell_z = floor(((*photons)[phI].r.z + L / 2.0) / dx);
+    int cell_num = cell_x + cell_z * N_CELLS;
 
-    int nx = floor(((*photons)[cellPh].r.x + L / 2.0) / dx);
-    int nz = floor(((*photons)[cellPh].r.z + L / 2.0) / dx);
-
-    (*photons)[cellPh].counted = true;
-
-    std::vector<int> photonsInCell;
-    for (int ph = 0; ph < (*photons).size(); ph++) { // looking for the photons in the same cell
-      struct PHOTON photon = (*photons)[ph];
-      if (cellPh == ph || photon.counted == true) continue;
-      /*
-        find in which cell is the photon
-      */
-      int cell_x = floor((photon.r.x + L / 2.0) / dx);
-      int cell_z = floor((photon.r.z + L / 2.0) / dx);
-      /*
-        if cell in which the photon seats is out of bound - error
-      */
-      if (cell_x < 0 || cell_x >= N_CELLS ||
-          cell_z < 0 || cell_z >= N_CELLS) {
-            std::cout << cell_x << " " << cell_z << "\n";
-            std::cout << "Cell number error in 'interact_photons'\n";
-            exit (EXIT_FAILURE);
-          }
-      /*
-        making subarray from all photons of the given cell
-      */
-      if (cell_x == nx && cell_z == nz) {
-        if ((*photons)[ph].counted) {
-          std::cout << "Weird error detected!\n";
-          exit (EXIT_FAILURE);
-        }
-        (*photons)[ph].counted = true;
-        photonsInCell.push_back(ph);
-      }
+    if((*CELLS)[cell_num].first < 2) {
+      phI ++;
+      continue; // if there is only one particle in that cell
     }
-    if (photonsInCell.size() <= 1) continue;
-    /*
-      interaction between photons in a given cell
-    */
-    for (auto photonI = photonsInCell.begin(); photonI != photonsInCell.end(); ) {
-      if ((*photons)[*photonI].toDelete){
-        ++photonI;
-        continue;
-      }
+
+    int phStart, phEnd;
+    if (cell_num == 0) {
+      phStart = 0;
+      phEnd = (*CELLS)[0].first;
+    } else {
+      phStart = (*CELLS)[cell_num - 1].first;
+      phEnd = (*CELLS)[cell_num].first;
+    }
+    for(int photonI = phStart; photonI < phEnd; photonI ++) {
+      if ((*photons)[photonI].toDelete) continue;
+
       double tauI = 0.0; // optical depth of the given photon I
+
       std::vector<std::pair<int, double> > pIJ;
-      for (auto photonJ = photonsInCell.begin(); photonJ != photonsInCell.end(); ) {
-        if ((*photons)[*photonJ].toDelete) {
-          ++photonJ;
-          continue;
-        }
-        if (photonI != photonJ) {
-          if (!threshold((*photons)[*photonI], (*photons)[*photonJ]) || (*photons)[*photonJ].id == (*photons)[*photonI].id) {
-            // std::cout << (*photons)[*photonJ].id << std::endl;
-            ++photonJ;
-            continue;
-          }
-          double tauIJ = sigmaGG((*photons)[*photonI], (*photons)[*photonJ]) * cdt / pow(dx, 3);
-          tauI += tauIJ;
-          pIJ.push_back({*photonJ, tauIJ});
-        }
-        ++photonJ;
+      for(int photonJ = phStart; photonJ < phEnd; photonJ ++) {
+        if ((*photons)[photonJ].toDelete || photonI == photonJ) continue;
+
+        if (!threshold((*photons)[photonI], (*photons)[photonJ]) || (*photons)[photonJ].id == (*photons)[photonI].id) continue;
+
+        double tauIJ = sigmaGG((*photons)[photonI], (*photons)[photonJ]) * cdt / pow(dx, 3);
+        // accumulating optical depth
+        tauI += tauIJ;
+        // storing indexes of all the interaction probabilities for a given photon I and neighboring photons J
+        pIJ.push_back({photonJ, tauIJ});
       }
       if (fRand(0.0, 1.0) <= tauI) { // this means that photon I pair produces, then we need to choose with which of the other photons in the same cell
-        (*grid)[nx][nz] ++;
-        (*photons)[*photonI].toDelete = true;
+        (*grid)[cell_x][cell_z] ++;
+        (*photons)[photonI].toDelete = true;
         for (int j = 0; j < pIJ.size(); j++) { // normalizing tauIJ by tauI
           pIJ[j].second /= tauI;
         }
@@ -178,14 +147,104 @@ void interact_photons(double cdt, double dx, double L, std::vector<struct PHOTON
         int photonJ = check_interact(random, pIJ);
         // std::cout << "interaction! " << pIJ[0].second << " " << pIJ[1].second << std::endl;
         if (photonJ < 0) {
-          std::cout << *photonI << " " << photonJ << "\n";
+          std::cout << cell_num << " " << photonI << " " << photonJ << "\n";
           std::cout << "Photon number error in 'check_interact'\n";
           exit (EXIT_FAILURE);
         }
         (*photons)[photonJ].toDelete = true;
       }
-      ++photonI;
     }
-    clean_things_up(photons);
+    phI = phEnd;
   }
+  clean_things_up(photons);
 }
+
+  // for (int cellPh = 0; cellPh < (*photons).size(); cellPh ++) { // choosing one of the photons
+  //   if ((*photons)[cellPh].counted) continue;
+  //
+  //   int nx = floor(((*photons)[cellPh].r.x + L / 2.0) / dx);
+  //   int nz = floor(((*photons)[cellPh].r.z + L / 2.0) / dx);
+  //
+  //   (*photons)[cellPh].counted = true;
+  //
+  //   std::vector<int> photonsInCell;
+  //   for (int ph = 0; ph < (*photons).size(); ph++) { // looking for the photons in the same cell
+  //     struct PHOTON photon = (*photons)[ph];
+  //     if (cellPh == ph || photon.counted == true) continue;
+  //     /*
+  //       find in which cell is the photon
+  //     */
+  //     int cell_x = floor((photon.r.x + L / 2.0) / dx);
+  //     int cell_z = floor((photon.r.z + L / 2.0) / dx);
+  //     /*
+  //       if cell in which the photon seats is out of bound - error
+  //     */
+  //     if (cell_x < 0 || cell_x >= N_CELLS ||
+  //         cell_z < 0 || cell_z >= N_CELLS) {
+  //           std::cout << cell_x << " " << cell_z << "\n";
+  //           std::cout << "Cell number error in 'interact_photons'\n";
+  //           exit (EXIT_FAILURE);
+  //         }
+  //     /*
+  //       making subarray from all photons of the given cell
+  //     */
+  //     if (cell_x == nx && cell_z == nz) {
+  //       if ((*photons)[ph].counted) {
+  //         std::cout << "Weird error detected!\n";
+  //         exit (EXIT_FAILURE);
+  //       }
+  //       (*photons)[ph].counted = true;
+  //       photonsInCell.push_back(ph);
+  //     }
+  //   }
+  //   if (photonsInCell.size() <= 1) continue;
+    /*
+      interaction between photons in a given cell
+    */
+  //   for (auto photonI = photonsInCell.begin(); photonI != photonsInCell.end(); ) {
+  //     if ((*photons)[*photonI].toDelete){
+  //       ++photonI;
+  //       continue;
+  //     }
+  //     double tauI = 0.0; // optical depth of the given photon I
+  //     std::vector<std::pair<int, double> > pIJ;
+  //     for (auto photonJ = photonsInCell.begin(); photonJ != photonsInCell.end(); ) {
+  //       if ((*photons)[*photonJ].toDelete) {
+  //         ++photonJ;
+  //         continue;
+  //       }
+  //       if (photonI != photonJ) {
+  //         if (!threshold((*photons)[*photonI], (*photons)[*photonJ]) || (*photons)[*photonJ].id == (*photons)[*photonI].id) {
+  //           // std::cout << (*photons)[*photonJ].id << std::endl;
+  //           ++photonJ;
+  //           continue;
+  //         }
+  //         double tauIJ = sigmaGG((*photons)[*photonI], (*photons)[*photonJ]) * cdt / pow(dx, 3);
+  //         tauI += tauIJ;
+  //         pIJ.push_back({*photonJ, tauIJ});
+  //       }
+  //       ++photonJ;
+  //     }
+  //     if (fRand(0.0, 1.0) <= tauI) { // this means that photon I pair produces, then we need to choose with which of the other photons in the same cell
+  //       (*grid)[nx][nz] ++;
+  //       (*photons)[*photonI].toDelete = true;
+  //       for (int j = 0; j < pIJ.size(); j++) { // normalizing tauIJ by tauI
+  //         pIJ[j].second /= tauI;
+  //       }
+  //       /*
+  //         choosing with which of the photons to interact
+  //       */
+  //       double random = fRand(0.0, 1.0);
+  //       int photonJ = check_interact(random, pIJ);
+  //       // std::cout << "interaction! " << pIJ[0].second << " " << pIJ[1].second << std::endl;
+  //       if (photonJ < 0) {
+  //         std::cout << *photonI << " " << photonJ << "\n";
+  //         std::cout << "Photon number error in 'check_interact'\n";
+  //         exit (EXIT_FAILURE);
+  //       }
+  //       (*photons)[photonJ].toDelete = true;
+  //     }
+  //     ++photonI;
+  //   }
+  //   clean_things_up(photons);
+  // }

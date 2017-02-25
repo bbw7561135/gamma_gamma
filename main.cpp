@@ -24,7 +24,7 @@ int main() {
   double L = 1.0;
   double cdt = 0.008;
   double dx = 0.01;
-  int NperStep = 1000;
+  int NperStep = 2000;
 
   int N_CELLS = (int)(L / dx);
 
@@ -62,7 +62,9 @@ int main() {
   while(i < 10000) {
     inject_photons(NperStep, dx, L, &photons);
     move_photons(cdt, dx, L, &photons);
-    interact_photons(cdt, dx, L, &photons, &grid);
+    fill_CELLS(L, dx, &CELLS, &photons);
+    tag_particles(L, dx, &CELLS, &photons);
+    interact_photons(cdt, dx, L, &CELLS, &photons, &grid);
     std::cout << "step: " << i << " photons: " << photons.size() << std::endl;
     i++;
     if(i % 50 == 0) writeToFile(photons, grid, i);

@@ -13,9 +13,8 @@ struct PHOTON{
   VECTOR r; // radius vector of the photon
   double E; // energy of the photon in MeV
   bool toDelete;
-  bool counted;
   int id;
   int tag;
-  PHOTON(int id_temp, VECTOR k_temp, VECTOR r_temp) : k(k_temp), r(r_temp), E(2.0), toDelete(false), counted(false), id(id_temp), tag(0) {}
+  PHOTON(int id_temp, VECTOR k_temp, VECTOR r_temp) : k(k_temp), r(r_temp), E(2.0), toDelete(false), id(id_temp), tag(0) {}
   ~PHOTON() {}
 };

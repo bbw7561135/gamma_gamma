@@ -10,7 +10,6 @@ void clean_things_up(std::vector<struct PHOTON> *photons) {
     if ((*photon).toDelete) {
       photon = photons->erase(photon);
     } else {
-      (*photon).counted = false;
       ++photon;
     }
   }
