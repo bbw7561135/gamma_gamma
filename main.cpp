@@ -59,7 +59,7 @@ int main() {
   }
 
   int i = 0;
-  while(i < 10000) {
+  while(i < 100000) {
     inject_photons(NperStep, dx, L, &photons);
     move_photons(cdt, dx, L, &photons);
     fill_CELLS(L, dx, &CELLS, &photons);
@@ -67,7 +67,7 @@ int main() {
     interact_photons(cdt, dx, L, &CELLS, &photons, &grid);
     std::cout << "step: " << i << " photons: " << photons.size() << std::endl;
     i++;
-    if(i % 50 == 0) writeToFile(photons, grid, i);
+    if(i % 1000 == 0) writeToFile(photons, grid, i);
   }
   // interact_photons(0.2, 1.0, &photons);
   // std::cout << photons[3].E << std::endl;
