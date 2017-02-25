@@ -22,8 +22,8 @@ int main() {
   srand (time(NULL));
   // ofstream outputData(path + name + ".dat");
   double L = 1.0;
-  double cdt = 0.008;
-  double dx = 0.01;
+  double cdt = 0.003;
+  double dx = 0.005;
   int NperStep = 2000;
 
   int N_CELLS = (int)(L / dx);
