@@ -5,12 +5,15 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <stdlib.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "objects.h"
+#include "auxilary.h"
 #include "process.h"
 
 void writeToFile(std::vector<struct PHOTON> photons, std::vector<std::vector<int> > grid, int timestep);
@@ -23,23 +26,38 @@ int main() {
   double dx = 0.01;
   int NperStep = 1000;
 
-  int nmax = (int)(L / dx);
+  int N_CELLS = (int)(L / dx);
 
-  // std::vector<int> CELLS;
-  // for (int i = 0; i < nmax; i ++) {
-  //   CELLS.push_back(0);
-  // }
+  /*
+    This array contains (a) the number of all particles in the preceding cells + in that cell, (b) the temporary number of particles already tagged in the given cell
+  */
+  std::vector<std::pair<int, int> > CELLS;
+  std::vector<struct PHOTON> photons;
 
+  // inject_photons(NperStep, dx, L, &photons);
+  // move_photons(cdt, dx, L, &photons);
+  // move_photons(cdt, dx, L, &photons);
+  // move_photons(cdt, dx, L, &photons);
+  // move_photons(cdt, dx, L, &photons);
+  // move_photons(cdt, dx, L, &photons);
+  // fill_CELLS(L, dx, &CELLS, &photons);
+  // tag_particles(L, dx, &CELLS, &photons);
+  // checkSorting(&photons);
+  // fill_CELLS(L, dx, &CELLS, &photons);
+  // return 0;
+
+  /*
+    This grid keeps the number of pairs produced
+  */
   std::vector<std::vector<int> > grid;
-  for (int i = 0; i < nmax; i ++) {
+  for (int i = 0; i < N_CELLS; i ++) {
     std::vector<int> temp;
-    for (int j = 0; j < nmax; j ++) {
+    for (int j = 0; j < N_CELLS; j ++) {
       temp.push_back(0);
     }
     grid.push_back(temp);
   }
 
-  std::vector<struct PHOTON> photons;
   int i = 0;
   while(i < 10000) {
     inject_photons(NperStep, dx, L, &photons);

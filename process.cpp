@@ -5,8 +5,9 @@
 #include <math.h>
 #include <algorithm>
 
-#include "process.h"
 #include "objects.h"
+#include "auxilary.h"
+#include "process.h"
 
 double fRand(double fMin, double fMax) {
   double f = (double)rand() / RAND_MAX;
@@ -73,6 +74,9 @@ void inject_photons(int number, double dx, double L, std::vector<struct PHOTON> 
 
 void move_photons(double cdt, double dx, double L, std::vector<struct PHOTON> *photons) {
   for (auto photon = (*photons).begin(); photon != (*photons).end(); ) {
+    /*
+      moving
+    */
     (*photon).r.x += (*photon).k.x * cdt;
     (*photon).r.y += (*photon).k.y * cdt;
     (*photon).r.z += (*photon).k.z * cdt;
@@ -93,19 +97,8 @@ void move_photons(double cdt, double dx, double L, std::vector<struct PHOTON> *p
   }
 }
 
-void clean_things_up(std::vector<struct PHOTON> *photons) {
-  for (auto photon = (*photons).begin(); photon != (*photons).end(); ) {
-    if ((*photon).toDelete) {
-      photon = photons->erase(photon);
-    } else {
-      (*photon).counted = false;
-      ++photon;
-    }
-  }
-}
-
 void interact_photons(double cdt, double dx, double L, std::vector<struct PHOTON> *photons, std::vector<std::vector <int> > *grid) {
-  int nmax = (int)(L / dx);
+  int N_CELLS = (int)(L / dx);
   for (int cellPh = 0; cellPh < (*photons).size(); cellPh ++) { // choosing one of the photons
     if ((*photons)[cellPh].counted) continue;
 
@@ -118,18 +111,16 @@ void interact_photons(double cdt, double dx, double L, std::vector<struct PHOTON
     for (int ph = 0; ph < (*photons).size(); ph++) { // looking for the photons in the same cell
       struct PHOTON photon = (*photons)[ph];
       if (cellPh == ph || photon.counted == true) continue;
-      // std::cout << "\t" << "(" << nmax << ") nx : " << nx << " : nz " << nz << std::endl;
       /*
         find in which cell is the photon
       */
       int cell_x = floor((photon.r.x + L / 2.0) / dx);
-      // int cell_y = floor((photon.r.y + L / 2.0) / dx);
       int cell_z = floor((photon.r.z + L / 2.0) / dx);
       /*
         if cell in which the photon seats is out of bound - error
       */
-      if (cell_x < 0 || cell_x >= nmax ||
-          cell_z < 0 || cell_z >= nmax) {
+      if (cell_x < 0 || cell_x >= N_CELLS ||
+          cell_z < 0 || cell_z >= N_CELLS) {
             std::cout << cell_x << " " << cell_z << "\n";
             std::cout << "Cell number error in 'interact_photons'\n";
             exit (EXIT_FAILURE);
