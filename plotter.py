@@ -14,7 +14,7 @@ import matplotlib
 matplotlib.rcParams['text.usetex'] = True
 matplotlib.rcParams['text.latex.unicode'] = True
 
-for i in range(15000):
+for i in range(32000):
     if (i+1) % 1000 != 0:
         continue
     fig, ax = plt.subplots()
@@ -33,8 +33,8 @@ for i in range(15000):
     z = z.reshape((N, N))
     strm = ax.pcolormesh(x, y, z, norm=colors.LogNorm(vmin=z.min(), vmax=z.max()), cmap=cmap)
     cbar = fig.colorbar(strm)
-    cbar.set_ticks(np.linspace(z.min(), z.max(), 10))
-    cbar.set_ticklabels(np.floor(np.linspace(z.min() - 1, z.max() - 1, 10)))
+    cbar.set_ticks(np.linspace(z.min(), z.max(), min(10, z.max() - 1)))
+    cbar.set_ticklabels(np.floor(np.linspace(z.min() - 1, z.max() - 1, min(10, z.max() - 1))))
 
 
     # nX = X.reshape(len(X), len(Z)).T
