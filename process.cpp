@@ -39,7 +39,7 @@ double sigmaGG(struct PHOTON photon1, struct PHOTON photon2) {
   double beta = sqrt(1.0 - 1.0 / s);
   double fs = (1.0 - pow(beta, 2)) * (-2.0 * beta * (2.0 - pow(beta, 2)) + (3.0 - pow(beta, 4)) * log((1.0 + beta) / (1.0 - beta)));
 
-  return 0.00001 * fs;
+  return 0.00005 * fs;
 }
 
 void inject_photons(int number, double dx, double L, std::vector<struct PHOTON> *photons) {

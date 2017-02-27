@@ -22,9 +22,9 @@ int main() {
   srand (time(NULL));
   // ofstream outputData(path + name + ".dat");
   double L = 1.0;
-  double cdt = 0.003;
-  double dx = 0.005;
-  int NperStep = 2000;
+  double cdt = 0.0015;
+  double dx = 0.002;
+  int NperStep = 4000;
 
   int N_CELLS = (int)(L / dx);
 

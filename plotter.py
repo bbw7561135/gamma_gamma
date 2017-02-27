@@ -11,10 +11,15 @@ import matplotlib.gridspec as gridspec
 import warnings
 
 import matplotlib
-matplotlib.rcParams['text.usetex'] = True
-matplotlib.rcParams['text.latex.unicode'] = True
+# matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['text.latex.unicode'] = True
 
-for i in range(32000):
+minim = 32000
+maxim = 35000
+
+for i in range(maxim):
+    if (i+1) <= minim:
+        continue
     if (i+1) % 1000 != 0:
         continue
     fig, ax = plt.subplots()
