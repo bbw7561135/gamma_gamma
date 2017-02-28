@@ -5,6 +5,8 @@ import matplotlib.lines as lines
 import matplotlib.patches as patches
 import matplotlib.colors as colors
 
+import sys
+
 from matplotlib.ticker import MaxNLocator
 import matplotlib.gridspec as gridspec
 
@@ -14,18 +16,20 @@ import matplotlib
 # matplotlib.rcParams['text.usetex'] = True
 # matplotlib.rcParams['text.latex.unicode'] = True
 
-minim = 32000
-maxim = 35000
+minim = int(sys.argv[1])
+maxim = int(sys.argv[2])
 
 for i in range(maxim):
     if (i+1) <= minim:
         continue
-    if (i+1) % 1000 != 0:
+    if (i+1) % 100 != 0:
         continue
     fig, ax = plt.subplots()
 
     x, y, z = np.loadtxt('dats/time_' + str(i + 1) + '.dat', unpack = True, usecols = (0, 1, 2))
     z += 1;
+    if (len(z[z==1]) == len(z)):
+        continue
     z[z==1] = np.nan
     z = np.ma.array (z, mask=np.isnan(z))
     cmap = matplotlib.cm.jet
